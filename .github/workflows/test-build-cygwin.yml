@@ -1,0 +1,74 @@
+name: Test on Cygwin
+on: 
+  workflow_dispatch:
+  release:
+    type: ["published"]
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read # to fetch code (actions/checkout)
+
+env:
+  SHELLOPTS: igncr
+  CYGWIN_NOWINPATH: 1
+  CHERE_INVOKING: 1
+  ESMF_DIR: /cygdrive/d/a/esmf/esmf
+  ESMF_BOPT: O
+  ESMF_OPTLEVEL: 2
+  ESMF_COMM: mpiuni
+  ESMF_COMPILER: gfortran
+  ESMF_TESTSHAREDOBJ: ON
+  ESMF_RANLIB: ranlib
+  ESMF_LAPACK: system
+  ESMF_LAPACK_LIBPATH: /usr/lib
+  ESMF_LAPACK_LIBS: -llapack -lblas
+  NETCDF: /usr
+  ESMF_NETCDF: split
+  ESMF_NETCDF_INCLUDE: /usr/include
+  ESMF_NETCDF_LIBPATH: /usr/lib
+  ESMF_CXX: g++
+  ESMF_CXXCOMPILEOPTS: "-g -O2"
+  ESMF_F90: gfortran
+  ESMF_F90COMPILEOPTS: "-g -O2"
+  ESMF_INSTALL_PREFIX: /tmp/fakeroot/usr
+  ESMF_INSTALL_DOCDIR: share/doc/esmf
+
+jobs:
+  cygwin_build_test:
+    runs-on: windows-latest
+    steps:
+      - run: git config --global core.autocrlf input
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - uses: cygwin/cygwin-install-action@v4
+        with:
+          platform: x86_64
+          install-dir: 'C:\tools\cygwin'
+          packages: >-
+            openmpi gcc-core gcc-fortran gcc-g++ libnetcdf-devel libnetcdf-fortran-devel 
+            texlive-collection-latex texlive-collection-latexextra perl make bash dash 
+            liblapack-devel cmake
+            python39-devel python39-pip python39-numpy python39-pytest
+      - name: Set Windows PATH
+        uses: egor-tensin/cleanup-path@v3
+        with:
+          dirs: 'C:\tools\cygwin\bin;C:\tools\cygwin\lib\lapack'
+      - name: Check location
+        run: |
+          C:\tools\cygwin\bin\dash.exe -c "echo PWD; pwd; echo ESMF_DIR=${ESMF_DIR}"
+      - name: Build ESMF
+        run: |
+          C:\tools\cygwin\bin\dash.exe -c "/usr/bin/make all"
+      - name: Build ESMPy
+        run: |
+          C:\tools\cygwin\bin\dash.exe -c "cd src/addon/esmpy; python -m pip install ."
+      - name: Check ESMF
+        run: |
+          C:\tools\cygwin\bin\dash.exe -c "/usr/bin/make check"

@@ -9,6 +9,7 @@
 ESMF_F90DEFAULT         = gfortran
 ESMF_CXXDEFAULT         = g++
 ESMF_CDEFAULT           = gcc
+ESMF_CXXCOMPILECPPFLAGS+= -D_BSD_SOURCE -D_POSIX_C_SOURCE=199309L
 
 ############################################################
 # Default MPI setting.
@@ -115,8 +116,8 @@ ESMF_CXXOPTFLAG_G       += -Wall -Wextra -Wno-unused
 
 ############################################################
 # Cygwin 1.5.24 does not yet support POSIX IPC (memory mapped files)
-#
-ESMF_CXXCOMPILECPPFLAGS += -DESMF_NO_POSIXIPC
+# Cygwin 3.4.9 might
+# ESMF_CXXCOMPILECPPFLAGS += -DESMF_NO_POSIXIPC
  
 ############################################################
 # Fortran symbol convention
