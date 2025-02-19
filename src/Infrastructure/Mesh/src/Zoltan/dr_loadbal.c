@@ -65,7 +65,25 @@ ZOLTAN_NEXT_OBJ_FN get_next_element;
 
 ZOLTAN_NUM_GEOM_FN get_num_geom;
 ZOLTAN_GEOM_MULTI_FN get_geom_multi;
-ZOLTAN_GEOM_FN get_geom;
+
+  /* Function get_geom renamed as zoltan_get_geom in order to prevent
+   * get_geom from appearing in libesmf as a defined symbol.
+   *
+   * The reason for this is that it is not needed as part of the libesmf external
+   * interface, and there happens to be a function of the same name in shapely:
+   * https://github.com/shapely/shapely/blob/c3ddf310f108a7f589d763d613d755ac12ab5d4f/src/pygeom.c#L414
+   * and if these packages co-exist in the same conda environment, then at the point
+   * where the other get_geom is intended to be called from inside shapely, it can
+   * instead cause the one from Zoltan to be called, resulting in user code
+   * segfaulting.  Where this happens, the start of the call trace looks like this:
+   *
+   * (gdb) where
+   * #0  0x00007fe66dbb1428 in get_geom () from /path/to/env/lib/libesmf_fullylinked.so
+   * #1  0x00007fe66ab08e27 in Y_b_func () from /path/to/env/lib/python3.11/site-packages/shapely/lib.cpython-311-x86_64-linux-gnu.so
+   * #2  ...
+   */
+
+ZOLTAN_GEOM_FN zoltan_get_geom;
 
 ZOLTAN_NUM_EDGES_FN get_num_edges;
 ZOLTAN_NUM_EDGES_MULTI_FN get_num_edges_multi;
@@ -295,7 +313,7 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     }
   }
   else {
-    if (Zoltan_Set_Fn(zz, ZOLTAN_GEOM_FN_TYPE, (void (*)()) get_geom,
+    if (Zoltan_Set_Fn(zz, ZOLTAN_GEOM_FN_TYPE, (void (*)()) zoltan_get_geom,
                       (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
       return 0;
@@ -933,9 +951,10 @@ int get_num_geom(void *data, int *ierr)
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-void get_geom(void *data, int num_gid_entries, int num_lid_entries,
-              ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
-              double *coor, int *ierr)
+/* see comment about renaming this function (where it is prototyped above) */
+void zoltan_get_geom(void *data, int num_gid_entries, int num_lid_entries,
+		     ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
+		     double *coor, int *ierr)
 {
   ELEM_INFO *elem;
   ELEM_INFO *current_elem;
@@ -1704,7 +1723,7 @@ int test_both;  /* If true, test both Zoltan_*_Assign and Zoltan_*_PP_Assign. */
         x[2] = current_elem->coord[0][2];
     }
     else 
-      get_geom((void *) mesh, 1, 1, &gid, &lid, x, &iierr);
+      zoltan_get_geom((void *) mesh, 1, 1, &gid, &lid, x, &iierr);
 
     xlo[0] = x[0];
     xlo[1] = x[1];
