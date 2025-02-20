@@ -35,7 +35,7 @@ module ESMF_UtilCubedSphereMod
   real(ESMF_KIND_R8) , parameter:: torad = pi/180.0          ! convert to radians
   real(ESMF_KIND_R8) , parameter:: missing = 1.e25
   real(ESMF_KIND_R8),  parameter :: JAPAN_SHIFT = pi/18
-  integer, parameter:: f_p = selected_real_kind(15)
+  integer, parameter:: f_p = maxval(selected_real_kind(15),selected_real_kind(20))
   real(ESMF_KIND_R8)    :: stretch               ! Optional stretching factor for the grid 
   logical :: dxdy_area = .false.   ! define area using dx*dy else spherical excess formula
   logical :: latlon = .false.
@@ -1068,10 +1068,12 @@ subroutine ESMF_UtilCreateCSCoordsPar(npts, LonEdge,LatEdge, start, count, tile,
 !  0 <= lon <= 2*pi ;    -pi/2 <= lat <= pi/2
     real(ESMF_KIND_R8), intent(inout) :: lon(:,:), lat(:,:)
 !
-    real(ESMF_KIND_R8)  :: lat_t, sin_p, cos_p, sin_lat, cos_lat, sin_o, p2, two_pi
-    real(ESMF_KIND_R8)  :: c2p1, c2m1
+    real(f_p) :: lat_t, sin_p, cos_p, sin_lat, cos_lat, sin_o, p2, two_pi
+    real(f_p) :: c2p1, c2m1, one, near_zero, f_p_lon, f_p_lat
     integer:: i, j
 
+    one = 1.d0
+    near_zero = tiny(near_zero)
     p2 = 0.5d0*pi
     two_pi = 2.d0*pi
 
@@ -1083,28 +1085,32 @@ subroutine ESMF_UtilCreateCSCoordsPar(npts, LonEdge,LatEdge, start, count, tile,
 
     do j=1,size(lon,2)
        do i=1,size(lon,1)
-          if ( abs(c2m1) > 1.d-7 ) then
-               sin_lat = sin(lat(i,j))
+          f_p_lon = lon(i,j)
+          f_p_lat = lat(i,j)
+          if ( abs(c2m1) > near_zero ) then
+               sin_lat = sin(f_p_lat) 
                lat_t = asin( (c2m1+c2p1*sin_lat)/(c2p1+c2m1*sin_lat) )
           else         ! no stretching
-               lat_t = lat(i,j)
+               lat_t = f_p_lat
           endif
-          sin_lat = sin(lat_t)
-          cos_lat = cos(lat_t)
-            sin_o = -(sin_p*sin_lat + cos_p*cos_lat*cos(lon(i,j)))
-          if ( (1.-abs(sin_o)) < 1.d-7 ) then    ! poles
-               lon(i,j) = 0.d0
-               lat(i,j) = sign( p2, sin_o )
+          sin_lat = sin(lat_t) 
+          cos_lat = cos(lat_t) 
+            sin_o = -(sin_p*sin_lat + cos_p*cos_lat*cos(f_p_lon))
+          if ( (one-abs(sin_o)) < near_zero ) then    ! poles
+               f_p_lon = 0.d0
+               f_p_lat = sign( p2, sin_o )
           else
-               lat(i,j) = asin( sin_o )
-               lon(i,j) = lon_p + atan2( -cos_lat*sin(lon(i,j)),   &
-                          -sin_lat*cos_p+cos_lat*sin_p*cos(lon(i,j)))
-               if ( lon(i,j) < 0.d0 ) then
-                    lon(i,j) = lon(i,j) + two_pi
-               elseif( lon(i,j) >= two_pi ) then
-                    lon(i,j) = lon(i,j) - two_pi
+               f_p_lat = asin( sin_o )
+               f_p_lon = lon_p + atan2( -cos_lat*sin(f_p_lon),   &
+                          -sin_lat*cos_p+cos_lat*sin_p*cos(f_p_lon))
+               if ( f_p_lon < 0.d0 ) then
+                    f_p_lon = f_p_lon + two_pi
+               elseif( f_p_lon >= two_pi ) then
+                    f_p_lon = f_p_lon - two_pi
                endif
           endif
+          lon(i,j) = f_p_lon
+          lat(i,j) = f_p_lat
        enddo
     enddo
 
