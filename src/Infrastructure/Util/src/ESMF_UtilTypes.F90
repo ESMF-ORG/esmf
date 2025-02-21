@@ -780,7 +780,6 @@
            ESMF_EXTRAPMETHOD_CREEP = ESMF_ExtrapMethod_Flag(4), &
            ESMF_EXTRAPMETHOD_CREEP_NRST_D = ESMF_ExtrapMethod_Flag(5)
 
-
 !------------------------------------------------------------------------------
       type ESMF_CubedSphereCalc_Flag
 #ifndef ESMF_NO_SEQUENCE
@@ -871,6 +870,25 @@
                             ESMF_REGRID_SCHEME_DCON3D=5, &
                             ESMF_REGRID_SCHEME_DCON3DWPOLE=6
 
+
+      type ESMF_PredefinedDynamicMask_Flag
+#ifndef ESMF_NO_SEQUENCE
+      sequence
+#endif
+!  private
+         integer :: PredefinedDynamicMask
+      end type
+
+
+      type(ESMF_PredefinedDynamicMask_Flag), parameter :: &
+           ESMF_PREDEFINEDDYNAMICMASK_MASKDEST  =  ESMF_PredefinedDynamicMask_Flag(0), &
+           ESMF_PREDEFINEDDYNAMICMASK_MASKSRC   =  ESMF_PredefinedDynamicMask_Flag(1), &
+           ESMF_PREDEFINEDDYNAMICMASK_MASKSRCDEST  =  ESMF_PredefinedDynamicMask_Flag(2), &
+           ESMF_PREDEFINEDDYNAMICMASK_MASKVOTE  =  ESMF_PredefinedDynamicMask_Flag(3), &
+           ESMF_PREDEFINEDDYNAMICMASK_MASKDESTV  =  ESMF_PredefinedDynamicMask_Flag(4), &
+           ESMF_PREDEFINEDDYNAMICMASK_MASKSRCV   =  ESMF_PredefinedDynamicMask_Flag(5), &
+           ESMF_PREDEFINEDDYNAMICMASK_MASKSRCDESTV  =  ESMF_PredefinedDynamicMask_Flag(6), &
+           ESMF_PREDEFINEDDYNAMICMASK_MASKVOTEV  =  ESMF_PredefinedDynamicMask_Flag(7)
 
 
 !------------------------------------------------------------------------------
@@ -1169,10 +1187,19 @@
              ESMF_EXTRAPMETHOD_CREEP, &
              ESMF_EXTRAPMETHOD_CREEP_NRST_D
 
+      public ESMF_PredefinedDynamicMask_Flag, &
+             ESMF_PREDEFINEDDYNAMICMASK_MASKDEST, &
+             ESMF_PREDEFINEDDYNAMICMASK_MASKSRC, &
+             ESMF_PREDEFINEDDYNAMICMASK_MASKSRCDEST, &
+             ESMF_PREDEFINEDDYNAMICMASK_MASKVOTE, &
+             ESMF_PREDEFINEDDYNAMICMASK_MASKDESTV, &
+             ESMF_PREDEFINEDDYNAMICMASK_MASKSRCV, &
+             ESMF_PREDEFINEDDYNAMICMASK_MASKSRCDESTV, &
+             ESMF_PREDEFINEDDYNAMICMASK_MASKVOTEV
+
       public ESMF_CubedSphereCalc_Flag, &
              ESMF_CUBEDSPHERECALC_1TILE, &
              ESMF_CUBEDSPHERECALC_LOCAL 
-      
       
       public ESMF_LineType_Flag, &
              ESMF_LINETYPE_CART, &
@@ -1281,7 +1308,7 @@
 
       public ESMF_RWGCheckMethod_Flag
       public ESMF_RWGCHECKMETHOD_ARRAY, ESMF_RWGCHECKMETHOD_FIELD
-      
+
 !  Overloaded = operator functions
       public operator(==), operator(/=), assignment(=)
 !
@@ -1320,6 +1347,7 @@ interface operator (==)
   module procedure ESMF_NormTypeEqual
   module procedure ESMF_RWGCheckMethodEqual
   module procedure ESMF_TermOrderEq
+  module procedure ESMF_PredefinedDynamicMask_FlagEq
 end interface
 
 interface operator (/=)
@@ -2400,7 +2428,38 @@ end function
 
       end function ESMF_TermOrderEq
 
+#undef  ESMF_METHOD
+#define ESMF_METHOD "ESMF_TermOrderEq"
+!BOPI
+! !IROUTINE: ESMF_TermOrderEq - Equality of TermOrder Flag
+!
+! !INTERFACE:
+      impure elemental function ESMF_PredefinedDynamicMask_FlagEq(flag1, flag2)
 
+! !RETURN VALUE:
+      logical :: ESMF_PredefinedDynamicMask_FlagEq
+
+! !ARGUMENTS:
+
+      type (ESMF_PredefinedDynamicMask_Flag), intent(in) :: &
+         flag1,      &
+         flag2 
+
+! !DESCRIPTION:
+!     This routine compares two ESMF PredefinedDynamicMask flags to see if
+!     they are equivalent.
+!
+!     The arguments are:
+!     \begin{description}
+!     \item[flag1, flag2]
+!          PredefinedDynamicMask flags
+!     \end{description}
+!
+!EOPI
+
+      ESMF_PredefinedDynamicMask_FlagEq = (flag1%PredefinedDynamicMask == flag2%PredefinedDynamicMask)
+
+      end function ESMF_PredefinedDynamicMask_FlagEq
 
 !------------------------------------------------------------------------- 
 #undef  ESMF_METHOD

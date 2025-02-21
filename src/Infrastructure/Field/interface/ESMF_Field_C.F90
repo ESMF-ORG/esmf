@@ -890,7 +890,7 @@ subroutine f_esmf_fieldcollectgarbage(field, rc)
 
     integer :: localrc
     type(ESMF_RouteHandle)  :: l_routehandle
-  
+ 
     ! initialize return code; assume routine not implemented
     rc = ESMF_RC_NOT_IMPL
     localrc = ESMF_RC_NOT_IMPL
