@@ -603,6 +603,7 @@ int Clock::count=0;
  #define ESMC_METHOD "ESMCI::Clock::advance()"
 
     int rc = ESMF_SUCCESS;
+    bool userChangedDirLocal;
 
     if (this == ESMC_NULL_POINTER) {
       ESMC_LogDefault.MsgFoundError(ESMC_RC_PTR_NULL,
@@ -723,11 +724,21 @@ int Clock::count=0;
                                     ringingAlarmList1stElementPtr);
     }
 
+    // Each alarm sets userChangedDirection to false in checkRingTime,
+    // so only the first alarm knows if the user changed direction.
+    // To remedy this, we'll save userChangedDirection and reset
+    // the clock's userChangedDirection before each alarm. After
+    // the last alarm::checkRingTime, this->userChangedDirection
+    // will be false. This is not the most efficient fix, but
+    // requires the least code changing to achieve it.
+    userChangedDirLocal = this->userChangedDirection;
+
     // traverse alarm list (i) for ringing alarms (j)
     for(int i=0, j=0; i<alarmCount; i++) {
       int rc;
       bool ringing;
 
+      this->userChangedDirection = userChangedDirLocal;
       // check each alarm to see if it's time to ring
       ringing = alarmList[i]->Alarm::checkRingTime(&rc);
 
